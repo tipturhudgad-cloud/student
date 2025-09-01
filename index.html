@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Student - College Database System</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #e6f2ff; color:black; }
+    h1, h2 { color: black; }
+    .container { width:95%; max-width:700px; margin:auto; background:white; padding:20px;
+      border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.2); margin-bottom:20px; }
+    label { display:block; margin-top:10px; font-weight:bold; }
+    input { width:100%; padding:8px; margin-top:5px; border:1px solid #ccc; border-radius:5px; }
+    button { margin-top:15px; padding:10px; background:#007bff; color:white;
+      border:none; border-radius:5px; cursor:pointer; font-weight:bold; width:100%; }
+    button:hover { background:#0056b3; }
+    .info-box { background:#e9f5e9; padding:10px; margin-top:15px; border-radius:5px; border:1px solid #cce5cc; }
+    .error { background:#f8d7da; color:#721c24; padding:10px; margin-top:10px; border-radius:5px; border:1px solid #f5c6cb; }
+    nav a { margin-right:15px; text-decoration:none; color:black; font-weight:bold; }
+    nav a:hover { text-decoration:underline; }
+    table { width:100%; border-collapse:collapse; margin-top:15px; overflow-x:auto; display:block; }
+    th, td { border:1px solid #ccc; padding:8px; text-align:left; }
+    th { background:#f0f0f0; }
+    .delete-btn { background:#dc3545; padding:5px 10px; border:none; border-radius:4px; color:white; cursor:pointer; font-weight:bold; }
+    .delete-btn:hover { background:#a71d2a; }
+    @media (max-width: 600px) {
+      button { width:100%; margin-top:10px; }
+      nav { display:flex; flex-direction:column; }
+      nav a { margin-bottom:10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>College Database System</h1>
+  <nav>
+    <a href="add_student.html">Add Student</a>
+    <a href="add_parent.html">Add Parent</a>
+    <a href="parent_login.html">Parent Login</a>
+  </nav>
+
+  <div class="container">
+    <h2>Add Student</h2>
+    <label for="student_id">Student ID</label>
+    <input type="number" id="student_id" />
+    <label for="student_name">Name</label>
+    <input type="text" id="student_name" />
+    <label for="student_grade">Grade</label>
+    <input type="number" step="0.01" id="student_grade" />
+    <label for="student_attendance">Attendance (%)</label>
+    <input type="number" step="0.01" id="student_attendance" />
+    <button onclick="addStudent()">Add Student</button>
+    <button onclick="showAllStudents()" style="background:#28a745;">Show All Students</button>
+    <div id="student_msg"></div>
+    <div id="students_list"></div>
+  </div>
+
+  <script>
+    let students = JSON.parse(localStorage.getItem("students")) || [];
+
+    function saveData() {
+      localStorage.setItem("students", JSON.stringify(students));
+    }
+
+    function addStudent() {
+      let id = document.getElementById("student_id").value.trim();
+      let name = document.getElementById("student_name").value.trim();
+      let grade = document.getElementById("student_grade").value.trim();
+      let attendance = document.getElementById("student_attendance").value.trim();
+      let msg = document.getElementById("student_msg");
+
+      if (!id || !name || !grade || !attendance) {
+        msg.innerHTML = `<div class='error'>Please fill in all fields.</div>`;
+        return;
+      }
+
+      if (students.find(s => s.id == id)) {
+        msg.innerHTML = `<div class='error'>Error: Student ID already exists.</div>`;
+        return;
+      }
+
+      students.push({ id, name, grade, attendance });
+      saveData();
+      msg.innerHTML = `<div class='info-box'>Student ${name} added successfully.</div>`;
+
+      document.getElementById("student_id").value = "";
+      document.getElementById("student_name").value = "";
+      document.getElementById("student_grade").value = "";
+      document.getElementById("student_attendance").value = "";
+
+      showAllStudents();
+    }
+
+    function showAllStudents() {
+      let container = document.getElementById("students_list");
+      if (students.length === 0) {
+        container.innerHTML = "<p>No students found.</p>";
+        return;
+      }
+
+      let html = `<table>
+        <thead><tr>
+          <th>Student ID</th><th>Name</th><th>Grade</th><th>Attendance (%)</th><th>Action</th>
+        </tr></thead><tbody>`;
+
+      students.forEach((student, index) => {
+        html += `
+          <tr>
+            <td>${student.id}</td>
+            <td>${student.name}</td>
+            <td>${student.grade}</td>
+            <td>${student.attendance}</td>
+            <td><button class="delete-btn" onclick="deleteStudent(${index})">Delete</button></td>
+          </tr>
+        `;
+      });
+
+      html += "</tbody></table>";
+      container.innerHTML = html;
+    }
+
+    function deleteStudent(index) {
+      if (!confirm(`Are you sure you want to delete student "${students[index].name}"?`)) return;
+
+      let studentId = students[index].id;
+      students.splice(index, 1);
+      saveData();
+
+      // also remove linked parent
+      let parents = JSON.parse(localStorage.getItem("parents")) || [];
+      parents = parents.filter(p => p.student_id != studentId);
+      localStorage.setItem("parents", JSON.stringify(parents));
+
+      document.getElementById("student_msg").innerHTML = `<div class='info-box'>Student deleted successfully.</div>`;
+      showAllStudents();
+    }
+
+    showAllStudents();
+  </script>
+</body>
+</html>
+
